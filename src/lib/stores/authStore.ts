@@ -1,9 +1,38 @@
+// src/lib/stores/authStore.ts
 import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
 
-// Type definition for user object
-interface User {
+// 認証済みユーザーのインターフェイス
+export interface AuthUser {
+  id?: number;
   email: string;
+  token: string;
+  role?: string;
+  city?: string;
 }
 
-// Create a writable store with initial value of null (not logged in)
-export const authStore = writable<User | null>(null);
+// 初期状態の設定
+let initialValue: AuthUser | null = null;
+
+// ブラウザ環境の場合、ローカルストレージから認証情報を復元
+if (browser) {
+  const storedAuth = localStorage.getItem('user');
+  if (storedAuth) {
+    try {
+      initialValue = JSON.parse(storedAuth);
+    } catch (e) {
+      console.error('Failed to parse auth from localStorage:', e);
+    }
+  }
+}
+
+// 認証ストアの作成
+export const authStore = writable<AuthUser | null>(initialValue);
+
+// ログイン状態をチェックする関数
+export function isLoggedIn(): boolean {
+  if (!browser) return false;
+  
+  const storedAuth = localStorage.getItem('user');
+  return !!storedAuth;
+}
