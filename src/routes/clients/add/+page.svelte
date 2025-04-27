@@ -2,34 +2,38 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/authStore";
-  import { mockClients } from "$lib/data/mockData";
-  import type { Client, ClientStatus } from "$lib/types";
+  import { clientsApi } from "$lib/api/clients";
+  import { getClientStatusOptions } from "$lib/utils/statusUtils";
+  import type { ClientStatus } from "$lib/types";
 
-  // Form data
+  // フォームデータ
   let name = "";
   let company_name = "";
   let contact_email = "";
   let contact_phone = "";
   let business_category: "food" | "travel" | "shop" = "food";
-  let status: ClientStatus = "contacted";
-  let notes = "";
+  let status: ClientStatus = "to_do"; // デフォルト値を更新
   let signed_date: string | null = null;
   let estimated_monthly_revenue: number | null = null;
+  let notes = "";
 
-  // Form state
+  // フォーム状態
   let submitting = false;
   let submitted = false;
   let error = "";
 
+  // ステータスオプション
+  const statusOptions = getClientStatusOptions();
+
   onMount(() => {
-    // Redirect to login if not authenticated
+    // 認証されていない場合はログインページにリダイレクト
     if (!$authStore) {
       goto("/login");
     }
   });
 
   async function handleSubmit() {
-    // Validate form
+    // フォームバリデーション
     if (!name || !company_name || !contact_email) {
       error = "Veuillez completer ce champ.";
       return;
@@ -39,10 +43,8 @@
     error = "";
 
     try {
-      // Create new client
-      const newClient: Client = {
-        id: mockClients.length + 1,
-        user_id: 1, // Mock user ID
+      // 新しいクライアントを作成
+      await clientsApi.createClient({
         name,
         company_name,
         business_category,
@@ -51,24 +53,17 @@
         status,
         signed_date,
         estimated_monthly_revenue,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      });
 
-      // Simulate API request
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Add to mock data
-      mockClients.push(newClient);
-
-      // Reset form
+      // フォームをリセット
       submitted = true;
 
-      // Redirect after a brief delay
+      // リダイレクト
       setTimeout(() => {
         goto("/clients");
       }, 1500);
     } catch (e) {
+      console.error("Error creating client:", e);
       error =
         "Une erreur s'est produite lors de l'enregistrement du client. Veuillez réessayer.";
     } finally {
@@ -242,14 +237,9 @@
             >Status <span class="text-red-500">*</span></label
           >
           <select id="status" class="input" bind:value={status} required>
-            <option value="email contacted">Contacté par email</option>
-            <option value="phone contacted">Contacté par téléphone</option>
-            <option value="not_responded">Pas de reponse</option>
-            <option value="meeting_scheduled">Meeting prévue</option>
-            <option value="proposal_sent">Proposition envoyée</option>
-            <option value="negotiation">Negotiation en cours</option>
-            <option value="closed_won">Clôturé (positive)</option>
-            <option value="closed_lost">Clôturé (Negative)</option>
+            {#each statusOptions as option}
+              <option value={option.value}>{option.label}</option>
+            {/each}
           </select>
         </div>
 
