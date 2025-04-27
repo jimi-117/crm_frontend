@@ -17,28 +17,33 @@ export interface ProspectCreate {
 
 // プロスペクト関連のAPIサービス
 export const prospectsApi = {
-  // プロスペクト一覧を取得
-  async getProspects(): Promise<Prospect[]> {
-    return api.get<Prospect[]>('/prospects/');
-  },
-  
-  // プロスペクト詳細を取得
-  async getProspect(id: number): Promise<Prospect> {
-    return api.get<Prospect>(`/prospects/${id}`);
-  },
-  
-  // プロスペクトを作成
-  async createProspect(prospectData: ProspectCreate): Promise<Prospect> {
-    return api.post<Prospect>('/prospects/', prospectData);
-  },
-  
-  // プロスペクト情報を更新
-  async updateProspect(id: number, prospectData: Partial<ProspectCreate>): Promise<Prospect> {
-    return api.put<Prospect>(`/prospects/${id}`, prospectData);
-  },
-  
-  // プロスペクトを削除
-  async deleteProspect(id: number): Promise<void> {
-    return api.delete(`/prospects/${id}`);
-  }
-};
+    // プロスペクト一覧を取得
+    async getProspects(): Promise<Prospect[]> {
+      return api.get<Prospect[]>('/prospects/');
+    },
+    
+    // プロスペクト詳細を取得
+    async getProspect(id: number): Promise<Prospect> {
+      return api.get<Prospect>(`/prospects/${id}`);
+    },
+    
+    // おすすめプロスペクトを取得
+    async getRecommendedProspects(limit: number = 3): Promise<Prospect[]> {
+      return api.get<Prospect[]>('/prospects/recommended', { limit: limit.toString() });
+    },
+    
+    // プロスペクトを作成
+    async createProspect(prospectData: ProspectCreate): Promise<Prospect> {
+      return api.post<Prospect>('/prospects/', prospectData);
+    },
+    
+    // プロスペクト情報を更新
+    async updateProspect(id: number, prospectData: Partial<ProspectCreate>): Promise<Prospect> {
+      return api.put<Prospect>(`/prospects/${id}`, prospectData);
+    },
+    
+    // プロスペクトを削除
+    async deleteProspect(id: number): Promise<void> {
+      return api.delete(`/prospects/${id}`);
+    }
+  };
