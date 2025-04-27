@@ -2,24 +2,28 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { authStore } from "$lib/stores/authStore";
-  import { mockProspects } from "$lib/data/mockData";
-  import type { Prospect, ProspectInterest, ProspectStatus } from "$lib/types";
+  import { prospectsApi } from "$lib/api/prospects";
+  import { getProspectStatusOptions } from "$lib/utils/statusUtils";
+  import type { ProspectStatus, ProspectInterest } from "$lib/types";
 
-  // Form data
+  // フォームデータ
   let name = "";
   let company_name = "";
   let contact_email = "";
   let contact_phone = "";
   let business_category: "food" | "travel" | "shop" = "food";
   let interest_level: ProspectInterest = "medium";
-  let status: ProspectStatus = "new";
+  let status: ProspectStatus = "new_inquiry"; // デフォルト値を更新
   let next_follow_up_date: string | null = null;
   let notes = "";
 
-  // Form state
+  // フォーム状態
   let submitting = false;
   let submitted = false;
   let error = "";
+
+  // ステータスオプション
+  const statusOptions = getProspectStatusOptions();
 
   // Set default follow-up date to tomorrow
   onMount(() => {
@@ -47,9 +51,7 @@
 
     try {
       // Create new prospect
-      const newProspect: Prospect = {
-        id: mockProspects.length + 1,
-        user_id: 1, // Mock user ID
+      await prospectsApi.createProspect({
         name,
         company_name,
         business_category,
@@ -59,15 +61,7 @@
         status,
         next_follow_up_date,
         notes,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      // Simulate API request
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Add to mock data
-      mockProspects.push(newProspect);
+      });
 
       // Reset form
       submitted = true;
@@ -77,6 +71,7 @@
         goto("/prospects");
       }, 1500);
     } catch (e) {
+      console.error("Error creating prospect:", e);
       error =
         "Une erreur s'est produite lors de l'enregistrement du prospect. Veuillez réessayer.";
     } finally {
@@ -255,9 +250,9 @@
             bind:value={interest_level}
             required
           >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="low">Faible</option>
+            <option value="medium">Moyen</option>
+            <option value="high">Élevé</option>
           </select>
         </div>
 
@@ -266,11 +261,9 @@
             >Statut <span class="text-red-500">*</span></label
           >
           <select id="status" class="input" bind:value={status} required>
-            <option value="new">Nouveau</option>
-            <option value="contacted">Contacté</option>
-            <option value="qualified">Qualifié</option>
-            <option value="converted">Converti</option>
-            <option value="disqualified">Disqualifié</option>
+            {#each statusOptions as option}
+              <option value={option.value}>{option.label}</option>
+            {/each}
           </select>
         </div>
 

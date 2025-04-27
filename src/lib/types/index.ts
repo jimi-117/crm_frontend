@@ -14,15 +14,11 @@ export interface Client {
   updated_at: string;
 }
 
-// Client status options
+// Client status options - 新しいステータス定義
 export type ClientStatus = 
-  | 'contacted'
-  | 'not_responded'
-  | 'meeting_scheduled'
-  | 'proposal_sent'
-  | 'negotiation'
-  | 'closed_won'
-  | 'closed_lost';
+  | 'to_do'       // 動画制作未開始
+  | 'in_progress' // 動画制作中
+  | 'done';       // 動画制作完了
 
 // User type
 export interface User {
@@ -68,8 +64,18 @@ export interface ContentItem {
 // Prospect interest level
 export type ProspectInterest = 'low' | 'medium' | 'high';
 
-// Prospect status options
-export type ProspectStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'disqualified';
+// Prospect status options - 新しいステータス定義
+export type ProspectStatus = 
+  | 'new_inquiry'              // 新規問い合わせ
+  | 'contact_attempted_phone'  // 電話で連絡試行
+  | 'contact_attempted_email'  // メールで連絡試行
+  | 'contacted_no_response'    // 連絡したが返答なし
+  | 'meeting_scheduled'        // ミーティング予定
+  | 'waiting_for_feedback'     // フィードバック待ち
+  | 'follow_up_needed'         // フォローアップ必要
+  | 'qualified'                // 見込み客として適格
+  | 'converted'                // 顧客に転換
+  | 'disqualified';            // 不適格
 
 // Statistics types
 export interface DashboardStats {
