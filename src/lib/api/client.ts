@@ -3,9 +3,9 @@ import { authStore } from '../stores/authStore';
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
+import { API_BASE_URL } from './config';
 
-// APIのベースURL（環境変数またはデフォルト値）
-const API_BASE_URL = browser ? import.meta.env.VITE_API_URL || 'http://localhost:8000' : '';
+
 
 /**
  * 認証トークンを含めたFetchリクエストを行う関数
