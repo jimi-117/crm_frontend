@@ -1,0 +1,24 @@
+{
+	"/": [
+		"src/routes/+layout.server.ts",
+		"src/routes/+layout.server.ts"
+	],
+	"/clients": [
+		"src/routes/+layout.server.ts"
+	],
+	"/clients/add": [
+		"src/routes/+layout.server.ts"
+	],
+	"/login": [
+		"src/routes/+layout.server.ts"
+	],
+	"/prospects": [
+		"src/routes/+layout.server.ts"
+	],
+	"/prospects/add": [
+		"src/routes/+layout.server.ts"
+	],
+	"/statistics": [
+		"src/routes/+layout.server.ts"
+	]
+}
