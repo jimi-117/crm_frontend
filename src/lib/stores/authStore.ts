@@ -1,38 +1,134 @@
-// src/lib/stores/authStore.ts
-import { writable } from 'svelte/store';
+// src/lib/api/auth.ts
 import { browser } from '$app/environment';
+import { authStore } from '../stores/authStore';
+import { API_BASE_URL } from './config';
 
-// 認証済みユーザーのインターフェイス
-export interface AuthUser {
-  id?: number;
+/**
+ * 認証関連のAPIインターフェース
+ */
+export interface LoginData {
   email: string;
-  token: string;
-  role?: string;
-  city?: string;
+  password: string;
 }
 
-// 初期状態の設定
-let initialValue: AuthUser | null = null;
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+}
 
-// ブラウザ環境の場合、ローカルストレージから認証情報を復元
-if (browser) {
-  const storedAuth = localStorage.getItem('user');
-  if (storedAuth) {
+export interface UserProfile {
+  id: number;
+  role: string;
+  city: string;
+}
+
+export async function login(loginData: LoginData): Promise<UserProfile> {
+    const formData = new FormData();
+    formData.append('username', loginData.email);
+    formData.append('password', loginData.password);
+    
+    const apiUrl = `${API_BASE_URL}/token`;
+    console.log('Login attempt for:', loginData.email);
+    console.log('API endpoint:', apiUrl);
+    console.log('API base URL:', API_BASE_URL);
+    
     try {
-      initialValue = JSON.parse(storedAuth);
-    } catch (e) {
-      console.error('Failed to parse auth from localStorage:', e);
+      // トークン取得リクエスト
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      console.log('Login response status:', response.status);
+      
+      if (!response.ok) {
+        let errorMsg = 'Échec de la connexion';
+        try {
+          const errorData = await response.json();
+          console.log('Login error data:', errorData);
+          errorMsg = errorData.detail || errorMsg;
+        } catch (error) {
+          console.log('Could not parse error response:', error);
+          
+          // レスポンスのテキストを試してみる
+          try {
+            const errorText = await response.text();
+            console.log('Error response text:', errorText);
+          } catch (e) {
+            console.log('Could not get response text either');
+          }
+        }
+        throw new Error(errorMsg);
+      }
+    
+      // トークンレスポンスの処理
+      const authData: AuthResponse = await response.json();
+      console.log('Login successful, got token');
+      
+      // ユーザープロファイル取得
+      const profileUrl = `${API_BASE_URL}/users/me/`;  // 末尾のスラッシュを追加
+      console.log('Fetching user profile from:', profileUrl);
+      const profileResponse = await fetch(profileUrl, {
+        headers: {
+          'Authorization': `Bearer ${authData.access_token}`
+        }
+      });
+      
+      console.log('Profile response status:', profileResponse.status);
+      
+      if (!profileResponse.ok) {
+        // プロフィール取得エラーの詳細をログに出力
+        try {
+          const errorData = await profileResponse.json();
+          console.log('Profile error data:', errorData);
+        } catch (e) {
+          try {
+            const errorText = await profileResponse.text();
+            console.log('Profile error text:', errorText);
+          } catch (e2) {
+            console.log('Could not read profile error response');
+          }
+        }
+        throw new Error('Échec de la récupération du profil');
+      }
+      
+      try {
+        const userProfile: UserProfile = await profileResponse.json();
+        console.log('Got user profile:', userProfile);
+        
+        // 認証情報をストアに保存
+        authStore.set({
+          email: loginData.email,
+          token: authData.access_token,
+          ...userProfile
+        });
+        
+        // ローカルストレージにも保存（ブラウザの場合のみ）
+        if (browser) {
+          localStorage.setItem('user', JSON.stringify({
+            email: loginData.email,
+            token: authData.access_token,
+            ...userProfile
+          }));
+        }
+        
+        return userProfile;
+      } catch (e) {
+        console.error('Error parsing user profile:', e);
+        throw new Error('Erreur lors de l\'analyse du profil utilisateur');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-  }
 }
 
-// 認証ストアの作成
-export const authStore = writable<AuthUser | null>(initialValue);
-
-// ログイン状態をチェックする関数
-export function isLoggedIn(): boolean {
-  if (!browser) return false;
-  
-  const storedAuth = localStorage.getItem('user');
-  return !!storedAuth;
+/**
+ * ログアウト処理
+ */
+export function logout(): void {
+  authStore.set(null);
+  if (browser) {
+    localStorage.removeItem('user');
+  }
 }
