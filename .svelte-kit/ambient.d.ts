@@ -41,7 +41,6 @@ declare module '$env/static/private' {
 	export const OLDPWD: string;
 	export const npm_package_json: string;
 	export const HOMEBREW_PREFIX: string;
-	export const PS1: string;
 	export const npm_config_userconfig: string;
 	export const npm_config_local_prefix: string;
 	export const DBUS_SESSION_BUS_ADDRESS: string;
@@ -70,14 +69,12 @@ declare module '$env/static/private' {
 	export const XDG_RUNTIME_DIR: string;
 	export const DISPLAY: string;
 	export const LANG: string;
-	export const VIRTUAL_ENV_PROMPT: string;
 	export const LS_COLORS: string;
 	export const npm_lifecycle_script: string;
 	export const SHELL: string;
 	export const npm_package_version: string;
 	export const npm_lifecycle_event: string;
 	export const LESSCLOSE: string;
-	export const VIRTUAL_ENV: string;
 	export const OSTYPE: string;
 	export const POSH_THEME: string;
 	export const npm_config_globalconfig: string;
@@ -140,7 +137,6 @@ declare module '$env/dynamic/private' {
 		OLDPWD: string;
 		npm_package_json: string;
 		HOMEBREW_PREFIX: string;
-		PS1: string;
 		npm_config_userconfig: string;
 		npm_config_local_prefix: string;
 		DBUS_SESSION_BUS_ADDRESS: string;
@@ -169,14 +165,12 @@ declare module '$env/dynamic/private' {
 		XDG_RUNTIME_DIR: string;
 		DISPLAY: string;
 		LANG: string;
-		VIRTUAL_ENV_PROMPT: string;
 		LS_COLORS: string;
 		npm_lifecycle_script: string;
 		SHELL: string;
 		npm_package_version: string;
 		npm_lifecycle_event: string;
 		LESSCLOSE: string;
-		VIRTUAL_ENV: string;
 		OSTYPE: string;
 		POSH_THEME: string;
 		npm_config_globalconfig: string;
