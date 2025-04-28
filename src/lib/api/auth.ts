@@ -22,29 +22,35 @@ export interface UserProfile {
   city: string;
 }
 
-/**
- * ログイン処理
- */
+
 export async function login(loginData: LoginData): Promise<UserProfile> {
-  const formData = new FormData();
-  formData.append('username', loginData.email);  // APIはusernameフィールドを期待
-  formData.append('password', loginData.password);
-  
-  try {
-    // トークン取得リクエスト
-    const response = await fetch(`${API_BASE_URL}/token`, {
-      method: 'POST',
-      body: formData,
-    });
+    const formData = new FormData();
+    formData.append('username', loginData.email);
+    formData.append('password', loginData.password);
     
-    if (!response.ok) {
-      let errorMsg = 'Échec de la connexion';
-      try {
-        const errorData = await response.json();
-        errorMsg = errorData.detail || errorMsg;
-      } catch (_) {}
-      throw new Error(errorMsg);
-    }
+    console.log('Login attempt for:', loginData.email);
+    console.log('API endpoint:', `${API_BASE_URL}/token`);
+    
+    try {
+      // トークン取得リクエスト
+      const response = await fetch(`${API_BASE_URL}/token`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      console.log('Login response status:', response.status);
+      
+      if (!response.ok) {
+        let errorMsg = 'Échec de la connexion';
+        try {
+          const errorData = await response.json();
+          console.log('Login error data:', errorData);
+          errorMsg = errorData.detail || errorMsg;
+        } catch (_) {
+          console.log('Could not parse error response');
+        }
+        throw new Error(errorMsg);
+      }
     
     // トークンレスポンスの処理
     const authData: AuthResponse = await response.json();
