@@ -24,27 +24,33 @@ export interface UserProfile {
 
 
 export async function login(loginData: LoginData): Promise<UserProfile> {
-    const url = `${API_BASE_URL}/token`;
-    console.log("API request to:", url);
-    
     const formData = new FormData();
     formData.append('username', loginData.email);
     formData.append('password', loginData.password);
     
+    console.log('Login attempt for:', loginData.email);
+    console.log('API endpoint:', `${API_BASE_URL}/token`);
+    
     try {
-      const response = await fetch(url, {
+      // トークン取得リクエスト
+      const response = await fetch(`${API_BASE_URL}/token`, {
         method: 'POST',
         body: formData,
       });
-    
-    if (!response.ok) {
-      let errorMsg = 'Échec de la connexion';
-      try {
-        const errorData = await response.json();
-        errorMsg = errorData.detail || errorMsg;
-      } catch (_) {}
-      throw new Error(errorMsg);
-    }
+      
+      console.log('Login response status:', response.status);
+      
+      if (!response.ok) {
+        let errorMsg = 'Échec de la connexion';
+        try {
+          const errorData = await response.json();
+          console.log('Login error data:', errorData);
+          errorMsg = errorData.detail || errorMsg;
+        } catch (_) {
+          console.log('Could not parse error response');
+        }
+        throw new Error(errorMsg);
+      }
     
     // トークンレスポンスの処理
     const authData: AuthResponse = await response.json();
