@@ -5,8 +5,6 @@ import { goto } from '$app/navigation';
 import { get } from 'svelte/store';
 import { API_BASE_URL } from './config';
 
-
-
 /**
  * 認証トークンを含めたFetchリクエストを行う関数
  */
@@ -16,10 +14,15 @@ export async function fetchWithAuth(
 ): Promise<Response> {
   const auth = get(authStore);
   
+  // APIエンドポイントをログに出力（デバッグ用）
+  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  console.log(`Making API request to: ${fullUrl}`);
+  console.log(`Request method: ${options.method || 'GET'}`);
+  
   // ヘッダーの設定（認証トークンを含める）
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...options.headers,
+    ...options.headers as Record<string, string>,
   };
   
   // 認証トークンがある場合はAuthorizationヘッダーに追加
@@ -27,24 +30,31 @@ export async function fetchWithAuth(
     headers['Authorization'] = `Bearer ${auth.token}`;
   }
   
-  // リクエストの実行
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-  
-  // 401エラー（認証切れ）の場合はログアウト処理
-  if (response.status === 401) {
-    // 認証情報をクリア
-    authStore.set(null);
-    if (browser) {
-      localStorage.removeItem('user');
-      // ログインページにリダイレクト
-      goto('/login');
+  try {
+    // リクエストの実行
+    const response = await fetch(fullUrl, {
+      ...options,
+      headers,
+    });
+    
+    console.log(`Response status: ${response.status}`);
+    
+    // 401エラー（認証切れ）の場合はログアウト処理
+    if (response.status === 401) {
+      // 認証情報をクリア
+      authStore.set(null);
+      if (browser) {
+        localStorage.removeItem('user');
+        // ログインページにリダイレクト
+        goto('/login');
+      }
     }
+    
+    return response;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
   }
-  
-  return response;
 }
 
 /**

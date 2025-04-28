@@ -4,21 +4,44 @@
   import { onMount } from "svelte";
   import { fade, fly } from "svelte/transition";
   import { login } from "$lib/api/auth";
+  import { API_BASE_URL } from "$lib/api/config";
 
   let email = "";
   let password = "";
   let error = "";
   let loading = false;
   let showPassword = false;
+  let showDebugInfo = false;
+
+  // デバッグ情報
+  let apiBaseUrl = API_BASE_URL;
+  let browserInfo = {
+    userAgent: "",
+    language: "",
+    online: true,
+    platform: "",
+  };
 
   onMount(() => {
     if ($authStore) {
       goto("/");
     }
+
+    // ブラウザ情報を収集（デバッグ用）
+    if (typeof window !== "undefined") {
+      browserInfo.userAgent = window.navigator.userAgent;
+      browserInfo.language = window.navigator.language;
+      browserInfo.online = window.navigator.onLine;
+      browserInfo.platform = window.navigator.platform;
+    }
   });
 
   function togglePasswordVisibility() {
     showPassword = !showPassword;
+  }
+
+  function toggleDebugInfo() {
+    showDebugInfo = !showDebugInfo;
   }
 
   function handlePasswordInput(event: Event) {
@@ -204,6 +227,54 @@
           </button>
         </div>
       </form>
+
+      <!-- デバッグ情報ボタン - 開発またはテスト環境でのみ表示 -->
+      <div class="mt-4 text-center">
+        <button
+          type="button"
+          class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          on:click={toggleDebugInfo}
+        >
+          {showDebugInfo ? "Masquer" : "Afficher"} les informations de débogage
+        </button>
+      </div>
+
+      <!-- デバッグ情報 -->
+      {#if showDebugInfo}
+        <div
+          class="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-md text-xs overflow-hidden"
+          transition:fade
+        >
+          <h3 class="font-medium mb-2">Informations de débogage</h3>
+
+          <div class="mb-2">
+            <p class="font-medium">API:</p>
+            <p class="ml-2 break-all">Base URL: {apiBaseUrl || "Non défini"}</p>
+          </div>
+
+          <div class="mb-2">
+            <p class="font-medium">Navigateur:</p>
+            <p class="ml-2">User Agent: {browserInfo.userAgent}</p>
+            <p class="ml-2">Langue: {browserInfo.language}</p>
+            <p class="ml-2">Plateforme: {browserInfo.platform}</p>
+            <p class="ml-2">En ligne: {browserInfo.online ? "Oui" : "Non"}</p>
+          </div>
+
+          <div class="mb-2">
+            <p class="font-medium">Test connexion à l'API:</p>
+            <div class="flex space-x-2 mt-1">
+              <a
+                href="/api-test"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-primary-500 hover:underline"
+              >
+                Ouvrir l'outil de test d'API
+              </a>
+            </div>
+          </div>
+        </div>
+      {/if}
     </div>
   </div>
 </div>
