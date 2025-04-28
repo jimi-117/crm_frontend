@@ -2,9 +2,10 @@
 import { api } from './client';
 import type { ContentItem } from '$lib/types';
 
-// APIと連携するためのコンテンツアイテム型定義（Pydanticスキーマに合わせる）
+// APIと連携するためのコンテンツアイテム型定義
 export interface ContentItemCreate {
-  content_type: string;
+  client_id: number;
+  content_type: 'video' | 'photo' | 'story';
   title?: string;
   description?: string;
   instagram_post_url: string;
@@ -14,11 +15,17 @@ export interface ContentItemCreate {
 export const contentItemsApi = {
   // コンテンツアイテム一覧を取得
   async getContentItems(clientId?: number): Promise<ContentItem[]> {
-    const params: Record<string, string> = {};
-    if (clientId) {
-      params.client_id = clientId.toString();
+    try {
+      const params: Record<string, string> = {};
+      if (clientId) {
+        params.client_id = clientId.toString();
+      }
+      
+      return await api.get<ContentItem[]>('/content-items/', params);
+    } catch (error) {
+      console.error('Error fetching content items:', error);
+      return [];
     }
-    return api.get<ContentItem[]>('/content-items/', params);
   },
   
   // コンテンツアイテム詳細を取得
@@ -27,18 +34,39 @@ export const contentItemsApi = {
   },
   
   // コンテンツアイテムを作成
-  async createContentItem(contentItemData: ContentItemCreate, clientId: number): Promise<ContentItem> {
-    const params = { client_id: clientId.toString() };
-    return api.post<ContentItem>('/content-items/', contentItemData);
+  async createContentItem(data: ContentItemCreate): Promise<ContentItem> {
+    return api.post<ContentItem>('/content-items/', data);
   },
   
   // コンテンツアイテム情報を更新
-  async updateContentItem(id: number, contentItemData: Partial<ContentItemCreate>): Promise<ContentItem> {
-    return api.put<ContentItem>(`/content-items/${id}`, contentItemData);
+  async updateContentItem(id: number, data: Partial<ContentItemCreate>): Promise<ContentItem> {
+    return api.put<ContentItem>(`/content-items/${id}`, data);
   },
   
   // コンテンツアイテムを削除
   async deleteContentItem(id: number): Promise<void> {
     return api.delete(`/content-items/${id}`);
+  },
+  
+  // 特定のクライアントのコンテンツアイテム数を取得
+  async getContentCountByClient(clientId: number): Promise<number> {
+    try {
+      const items = await this.getContentItems(clientId);
+      return items.length;
+    } catch (error) {
+      console.error(`Error getting content count for client ${clientId}:`, error);
+      return 0;
+    }
+  },
+  
+  // 特定のタイプのコンテンツアイテム数を取得
+  async getContentCountByType(type: 'video' | 'photo' | 'story'): Promise<number> {
+    try {
+      const items = await this.getContentItems();
+      return items.filter(item => item.content_type === type).length;
+    } catch (error) {
+      console.error(`Error getting content count for type ${type}:`, error);
+      return 0;
+    }
   }
 };

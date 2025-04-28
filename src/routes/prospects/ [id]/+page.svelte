@@ -1,1 +1,3 @@
-export { default } from '../../prospects_detail.svelte';
+<script>
+  export { default } from "../../clients_edit.svelte";
+</script>
