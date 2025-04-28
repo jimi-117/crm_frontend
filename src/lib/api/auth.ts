@@ -1,7 +1,8 @@
 // src/lib/api/auth.ts
 import { browser } from '$app/environment';
 import { authStore } from '../stores/authStore';
-import { API_BASE_URL } from './config';
+import { API_BASE_URL, API_ENDPOINTS } from './config';
+import { AUTH_CONFIG } from '$lib/config';
 
 /**
  * 認証関連のAPIインターフェース
@@ -22,18 +23,18 @@ export interface UserProfile {
   city: string;
 }
 
-
 export async function login(loginData: LoginData): Promise<UserProfile> {
     const formData = new FormData();
     formData.append('username', loginData.email);
     formData.append('password', loginData.password);
     
+    const apiUrl = `${API_BASE_URL}${API_ENDPOINTS.AUTH.TOKEN}`;
     console.log('Login attempt for:', loginData.email);
-    console.log('API endpoint:', `${API_BASE_URL}/token`);
+    console.log('API endpoint:', apiUrl);
     
     try {
       // トークン取得リクエスト
-      const response = await fetch(`${API_BASE_URL}/token`, {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
       });
@@ -46,49 +47,80 @@ export async function login(loginData: LoginData): Promise<UserProfile> {
           const errorData = await response.json();
           console.log('Login error data:', errorData);
           errorMsg = errorData.detail || errorMsg;
-        } catch (_) {
-          console.log('Could not parse error response');
+        } catch (error) {
+          console.log('Could not parse error response:', error);
+          
+          // レスポンスのテキストを試してみる
+          try {
+            const errorText = await response.text();
+            console.log('Error response text:', errorText);
+          } catch (e) {
+            console.log('Could not get response text either');
+          }
         }
         throw new Error(errorMsg);
       }
     
-    // トークンレスポンスの処理
-    const authData: AuthResponse = await response.json();
-    
-    // ユーザープロファイル取得
-    const profileResponse = await fetch(`${API_BASE_URL}/users/me`, {
-      headers: {
-        'Authorization': `Bearer ${authData.access_token}`
+      // トークンレスポンスの処理
+      const authData: AuthResponse = await response.json();
+      console.log('Login successful, got token');
+      
+      // ユーザープロファイル取得
+      const profileUrl = `${API_BASE_URL}${API_ENDPOINTS.AUTH.USER_PROFILE}`;
+      console.log('Fetching user profile from:', profileUrl);
+      const profileResponse = await fetch(profileUrl, {
+        headers: {
+          'Authorization': `Bearer ${authData.access_token}`
+        }
+      });
+      
+      console.log('Profile response status:', profileResponse.status);
+      
+      if (!profileResponse.ok) {
+        // プロフィール取得エラーの詳細をログに出力
+        try {
+          const errorData = await profileResponse.json();
+          console.log('Profile error data:', errorData);
+        } catch (e) {
+          try {
+            const errorText = await profileResponse.text();
+            console.log('Profile error text:', errorText);
+          } catch (e2) {
+            console.log('Could not read profile error response');
+          }
+        }
+        throw new Error('Échec de la récupération du profil');
       }
-    });
-    
-    if (!profileResponse.ok) {
-      throw new Error('Échec de la récupération du profil');
+      
+      try {
+        const userProfile: UserProfile = await profileResponse.json();
+        console.log('Got user profile:', userProfile);
+        
+        // 認証情報をストアに保存
+        authStore.set({
+          email: loginData.email,
+          token: authData.access_token,
+          ...userProfile
+        });
+        
+        // ローカルストレージにも保存（ブラウザの場合のみ）
+        if (browser) {
+          localStorage.setItem(AUTH_CONFIG.STORAGE_KEY, JSON.stringify({
+            email: loginData.email,
+            token: authData.access_token,
+            ...userProfile
+          }));
+        }
+        
+        return userProfile;
+      } catch (e) {
+        console.error('Error parsing user profile:', e);
+        throw new Error('Erreur lors de l\'analyse du profil utilisateur');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-    
-    const userProfile: UserProfile = await profileResponse.json();
-    
-    // 認証情報をストアに保存
-    authStore.set({
-      email: loginData.email,
-      token: authData.access_token,
-      ...userProfile
-    });
-    
-    // ローカルストレージにも保存（ブラウザの場合のみ）
-    if (browser) {
-      localStorage.setItem('user', JSON.stringify({
-        email: loginData.email,
-        token: authData.access_token,
-        ...userProfile
-      }));
-    }
-    
-    return userProfile;
-  } catch (error) {
-    console.error('Login error:', error);
-    throw error;
-  }
 }
 
 /**
@@ -97,6 +129,6 @@ export async function login(loginData: LoginData): Promise<UserProfile> {
 export function logout(): void {
   authStore.set(null);
   if (browser) {
-    localStorage.removeItem('user');
+    localStorage.removeItem(AUTH_CONFIG.STORAGE_KEY);
   }
 }
