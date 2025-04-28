@@ -22,20 +22,20 @@ export interface UserProfile {
   city: string;
 }
 
-/**
- * ログイン処理
- */
+
 export async function login(loginData: LoginData): Promise<UserProfile> {
-  const formData = new FormData();
-  formData.append('username', loginData.email);  // APIはusernameフィールドを期待
-  formData.append('password', loginData.password);
-  
-  try {
-    // トークン取得リクエスト
-    const response = await fetch(`${API_BASE_URL}/token`, {
-      method: 'POST',
-      body: formData,
-    });
+    const url = `${API_BASE_URL}/token`;
+    console.log("API request to:", url);
+    
+    const formData = new FormData();
+    formData.append('username', loginData.email);
+    formData.append('password', loginData.password);
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      });
     
     if (!response.ok) {
       let errorMsg = 'Échec de la connexion';
